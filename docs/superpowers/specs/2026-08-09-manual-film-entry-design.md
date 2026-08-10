@@ -86,6 +86,14 @@ Films are independent entries — no deduplication logic. Two films can legitima
 - **Delete confirmations**: both film and review deletion require confirming a dialog; the film-delete dialog states the cascade-deleted review count.
 - **Storage errors** (disk full, poster file copy failure, etc.): surfaced via a snackbar rather than failing silently or crashing.
 
+## Future: encryption
+
+Not part of this MVP (encryption is a separate later roadmap phase per `CLAUDE.md`), but confirmed compatible so this doesn't get architected into a corner:
+
+- Drift supports encrypted SQLite via **SQLite3MultipleCiphers** (Drift's current recommended approach, Drift 2.32.0+ / sqlite3 3.x) — same `NativeDatabase` already used here, no separate database package. Setup is a build-hook config change plus a passphrase passed via `PRAGMA key = '...'` in the `NativeDatabase.createInBackground()` setup callback.
+- Covers exactly this feature's target platforms: Android, iOS, Linux, macOS, Windows.
+- Because this MVP ships an **unencrypted** database first, turning encryption on later is a migration, not a flag flip: SQLite can't apply `PRAGMA key` to an already-unencrypted database. The migration path is `PRAGMA rekey` to produce an encrypted copy of the existing database. Whatever implements the encryption phase should plan for that migration step explicitly.
+
 ## Testing
 
 - **Repository tests**: `FilmRepository`/`ReviewRepository` tested against Drift's in-memory `NativeDatabase.memory()` — covering create/update/delete, the film-delete cascade, and multi-genre association, without touching real device storage.
