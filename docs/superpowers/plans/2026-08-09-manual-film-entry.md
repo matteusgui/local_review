@@ -6,7 +6,7 @@
 
 **Architecture:** A Drift (SQLite) database with `Films`/`Genres`/`FilmGenres`/`Reviews` tables, wrapped by thin `FilmRepository`/`ReviewRepository` classes exposing reactive `Stream`s for reads. A single `AppDatabase` instance is created in `main.dart` and handed to the widget tree via an `AppRepositories` `InheritedWidget`. Screens consume repository streams directly through `StreamBuilder` — no separate state-management package.
 
-**Tech Stack:** Flutter (Dart SDK ^3.12.2), `drift` + `drift_flutter` (SQLite), `image_picker` + `path_provider` (poster images), `flutter_test` (widget tests), `package:test` + `drift`'s in-memory `NativeDatabase` (repository tests).
+**Tech Stack:** Flutter (Dart SDK ^3.12.2), `drift` + `drift_flutter` (SQLite), `image_picker` + `path_provider` (poster images), `flutter_test` (widget tests and repository tests — see amendment below), `drift`'s in-memory `NativeDatabase` (repository tests).
 
 ## Global Constraints
 
@@ -14,7 +14,8 @@
 - Target platforms: Android, iOS, Linux, macOS, Windows. No web support in this feature (per spec Scope).
 - Pin these dependency versions (current as of plan authoring — verified against pub.dev/Drift docs):
   - `drift: ^2.34.2`, `drift_flutter: ^0.3.1`, `path_provider: ^2.1.6`, `path: ^1.9.0`, `image_picker: ^1.2.3`
-  - dev: `drift_dev: ^2.34.5`, `build_runner: ^2.15.2`
+  - dev: `drift_dev: ^2.34.5`, `build_runner: ^2.15.1` (amended during Task 1 — see below)
+- **Amendment (post-Task 1, human-approved):** `build_runner: ^2.15.2` does not resolve on this Flutter SDK (3.44.6) — it needs `analyzer >=13.3.0` → `meta ^1.18.3`, but this SDK pins `meta` to exactly `1.18.0`. Use `build_runner: ^2.15.1` instead (same minor line, `flutter pub get` confirmed this is the resolvable version). Separately, `package:test` (specified above for repository tests) does not resolve alongside `drift_dev`'s analyzer requirement and this SDK's exact `test_api` pin — no version of `test` satisfies both. Use `package:flutter_test/flutter_test.dart` for repository tests instead (ships with the SDK, equivalent `test`/`group`/`setUp`/`expect` API); if a repository test needs `DatabaseConnection` from `package:drift/native.dart`, add `import 'package:drift/drift.dart' hide isNull;` to avoid an ambiguous import against `flutter_test`'s `isNull` matcher.
 - Year validation range: 1888 through `DateTime.now().year + 1` (per spec).
 - Rating range: 0.5–5.0 in 0.5 increments (per spec).
 - Genre seed list (exact, fixed order): Action, Comedy, Drama, Horror, Sci-Fi, Documentary, Animation, Thriller, Romance, Fantasy.
