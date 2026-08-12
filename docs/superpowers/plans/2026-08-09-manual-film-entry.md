@@ -148,9 +148,10 @@ Expected: Creates `local_reviews/lib/data/database.g.dart` with no errors.
 Create `local_reviews/test/data/database_test.dart`:
 
 ```dart
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/data/database.dart';
-import 'package:test/test.dart';
 
 AppDatabase openTestDatabase() => AppDatabase(
       DatabaseConnection(
@@ -206,7 +207,9 @@ git commit -m "Add Drift schema for films and genres"
 
 **Interfaces:**
 - Consumes: `Films`, `Genres`, `FilmGenres` tables, `seedGenreNames` (Task 1).
-- Produces: `Reviews` table; generated row class `Review`; generated companion `ReviewsCompanion`.
+- Produces: `Reviews` table; generated row class `Review` (review body field: `reviewText`); generated companion `ReviewsCompanion`.
+
+> **Amendment (post-Task 1, verified during Task 2):** the review body/content column's Dart getter cannot be named `text` — `Table` already declares an instance method `text()` (the column-builder), and Dart forbids a getter sharing that name (`Can't declare a member that conflicts with an inherited one`). The column is named `reviewText` throughout this plan from here on: `Review.reviewText`, `ReviewsCompanion.reviewText`, and the `reviewText` named parameter on `ReviewRepository.createReview`/`updateReview` (Task 4) and any UI code that reads or writes a review's body text (Tasks 12, 14, 15, 16). The SQL column type (TEXT, not null) is unchanged — only the Dart-facing identifier differs. This does **not** apply to Flutter's own `TextEditingController.text` / `TextEditingValue.text` (unrelated framework properties) or to `find.text(...)` widget-test matchers (matching rendered string content, not a field name) — those stay as `.text` wherever the plan already uses them.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -221,7 +224,7 @@ Add to `local_reviews/test/data/database_test.dart` (inside `main()`, after the 
           ReviewsCompanion.insert(
             filmId: filmId,
             rating: 4.5,
-            text: 'Tense and beautifully animated.',
+            reviewText: 'Tense and beautifully animated.',
             watchDate: DateTime(2026, 1, 5),
           ),
         );
@@ -249,7 +252,7 @@ class Reviews extends Table {
   IntColumn get filmId =>
       integer().references(Films, #id, onDelete: KeyAction.cascade)();
   RealColumn get rating => real()();
-  TextColumn get text => text()();
+  TextColumn get reviewText => text()();
   DateTimeColumn get watchDate => dateTime()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -263,8 +266,8 @@ Change the `@DriftDatabase` annotation to include it:
 
 - [ ] **Step 4: Regenerate Drift code**
 
-Run: `cd local_reviews && dart run build_runner build --delete-conflicting-outputs`
-Expected: Regenerates `database.g.dart` with no errors.
+Run: `cd local_reviews && flutter pub run build_runner build --delete-conflicting-outputs`
+Expected: Regenerates `database.g.dart` with no errors. (The standalone `dart run build_runner build` fails in this environment — `dart` on PATH isn't Flutter-SDK-aware; use the `flutter pub run` form.)
 
 - [ ] **Step 5: Run test to verify it passes**
 
@@ -304,9 +307,9 @@ git commit -m "Add Reviews table with cascade delete from Films"
 Create `local_reviews/test/data/film_repository_test.dart`:
 
 ```dart
+import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
-import 'package:test/test.dart';
 
 import 'database_test.dart' show openTestDatabase;
 
@@ -375,7 +378,7 @@ void main() {
           ReviewsCompanion.insert(
             filmId: filmId,
             rating: 3,
-            text: 'Fine.',
+            reviewText: 'Fine.',
             watchDate: DateTime(2026, 1, 1),
           ),
         );
@@ -383,7 +386,7 @@ void main() {
           ReviewsCompanion.insert(
             filmId: otherFilmId,
             rating: 5,
-            text: 'Great.',
+            reviewText: 'Great.',
             watchDate: DateTime(2026, 1, 2),
           ),
         );
@@ -554,8 +557,8 @@ git commit -m "Add FilmRepository"
   - `ReviewRepository(AppDatabase db)`
   - `Stream<List<ReviewWithFilm>> watchAllReviews()` (sorted by `watchDate` desc, then `createdAt` desc)
   - `Stream<List<Review>> watchReviewsForFilm(int filmId)`
-  - `Future<int> createReview({required int filmId, required double rating, required String text, required DateTime watchDate})`
-  - `Future<void> updateReview({required int id, required double rating, required String text, required DateTime watchDate})`
+  - `Future<int> createReview({required int filmId, required double rating, required String reviewText, required DateTime watchDate})`
+  - `Future<void> updateReview({required int id, required double rating, required String reviewText, required DateTime watchDate})`
   - `Future<void> deleteReview(int id)`
 
 - [ ] **Step 1: Write the failing test**
@@ -563,10 +566,10 @@ git commit -m "Add FilmRepository"
 Create `local_reviews/test/data/review_repository_test.dart`:
 
 ```dart
+import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
 import 'package:local_reviews/data/repositories/review_repository.dart';
-import 'package:test/test.dart';
 
 import 'database_test.dart' show openTestDatabase;
 
@@ -587,18 +590,18 @@ void main() {
     await reviewRepository.createReview(
       filmId: filmId,
       rating: 3,
-      text: 'First watch.',
+      reviewText: 'First watch.',
       watchDate: DateTime(2026, 1, 1),
     );
     await reviewRepository.createReview(
       filmId: filmId,
       rating: 4.5,
-      text: 'Rewatch, liked it more.',
+      reviewText: 'Rewatch, liked it more.',
       watchDate: DateTime(2026, 3, 1),
     );
 
     final reviews = await reviewRepository.watchAllReviews().first;
-    expect(reviews.map((r) => r.review.text).toList(),
+    expect(reviews.map((r) => r.review.reviewText).toList(),
         ['Rewatch, liked it more.', 'First watch.']);
     expect(reviews.every((r) => r.film.title == 'A Film'), isTrue);
   });
@@ -606,9 +609,9 @@ void main() {
   test('a film can have multiple reviews (rewatches)', () async {
     final filmId = await filmRepository.createFilm(title: 'Rewatched', year: 2015);
     await reviewRepository.createReview(
-        filmId: filmId, rating: 3, text: 'Ok.', watchDate: DateTime(2026, 1, 1));
+        filmId: filmId, rating: 3, reviewText: 'Ok.', watchDate: DateTime(2026, 1, 1));
     await reviewRepository.createReview(
-        filmId: filmId, rating: 5, text: 'Loved it this time.', watchDate: DateTime(2026, 2, 1));
+        filmId: filmId, rating: 5, reviewText: 'Loved it this time.', watchDate: DateTime(2026, 2, 1));
 
     final reviews = await reviewRepository.watchReviewsForFilm(filmId).first;
     expect(reviews, hasLength(2));
@@ -617,26 +620,26 @@ void main() {
   test('updateReview changes rating, text, and watch date', () async {
     final filmId = await filmRepository.createFilm(title: 'Edit Me', year: 2018);
     final reviewId = await reviewRepository.createReview(
-        filmId: filmId, rating: 2, text: 'Meh.', watchDate: DateTime(2026, 1, 1));
+        filmId: filmId, rating: 2, reviewText: 'Meh.', watchDate: DateTime(2026, 1, 1));
 
     await reviewRepository.updateReview(
       id: reviewId,
       rating: 4,
-      text: 'Grew on me.',
+      reviewText: 'Grew on me.',
       watchDate: DateTime(2026, 1, 2),
     );
 
     final reviews = await reviewRepository.watchReviewsForFilm(filmId).first;
     expect(reviews.single.rating, 4);
-    expect(reviews.single.text, 'Grew on me.');
+    expect(reviews.single.reviewText, 'Grew on me.');
   });
 
   test('deleteReview removes only that review', () async {
     final filmId = await filmRepository.createFilm(title: 'Two Reviews', year: 2019);
     final keepId = await reviewRepository.createReview(
-        filmId: filmId, rating: 3, text: 'Keep.', watchDate: DateTime(2026, 1, 1));
+        filmId: filmId, rating: 3, reviewText: 'Keep.', watchDate: DateTime(2026, 1, 1));
     final removeId = await reviewRepository.createReview(
-        filmId: filmId, rating: 1, text: 'Remove.', watchDate: DateTime(2026, 1, 2));
+        filmId: filmId, rating: 1, reviewText: 'Remove.', watchDate: DateTime(2026, 1, 2));
 
     await reviewRepository.deleteReview(removeId);
 
@@ -698,13 +701,13 @@ class ReviewRepository {
   Future<int> createReview({
     required int filmId,
     required double rating,
-    required String text,
+    required String reviewText,
     required DateTime watchDate,
   }) {
     return _db.into(_db.reviews).insert(ReviewsCompanion.insert(
           filmId: filmId,
           rating: rating,
-          text: text,
+          reviewText: reviewText,
           watchDate: watchDate,
         ));
   }
@@ -712,13 +715,13 @@ class ReviewRepository {
   Future<void> updateReview({
     required int id,
     required double rating,
-    required String text,
+    required String reviewText,
     required DateTime watchDate,
   }) {
     return (_db.update(_db.reviews)..where((r) => r.id.equals(id))).write(
       ReviewsCompanion(
         rating: Value(rating),
-        text: Value(text),
+        reviewText: Value(reviewText),
         watchDate: Value(watchDate),
       ),
     );
@@ -762,9 +765,9 @@ Create `local_reviews/test/services/poster_storage_service_test.dart`:
 ```dart
 import 'dart:io';
 
+import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/services/poster_storage_service.dart';
 import 'package:path/path.dart' as p;
-import 'package:test/test.dart';
 
 void main() {
   late Directory tempDir;
@@ -1798,9 +1801,9 @@ void main() {
 
     final filmId = await filmRepository.createFilm(title: 'Deletable', year: 2005);
     await reviewRepository.createReview(
-        filmId: filmId, rating: 3, text: 'Fine.', watchDate: DateTime(2026, 1, 1));
+        filmId: filmId, rating: 3, reviewText: 'Fine.', watchDate: DateTime(2026, 1, 1));
     await reviewRepository.createReview(
-        filmId: filmId, rating: 4, text: 'Rewatch.', watchDate: DateTime(2026, 2, 1));
+        filmId: filmId, rating: 4, reviewText: 'Rewatch.', watchDate: DateTime(2026, 2, 1));
 
     await tester.pumpWidget(
       AppRepositories(
@@ -1933,7 +1936,7 @@ class FilmDetailScreen extends StatelessWidget {
                         return ListTile(
                           key: ValueKey('review_tile_${review.id}'),
                           title: StarRatingInput(rating: review.rating, size: 16),
-                          subtitle: Text(review.text),
+                          subtitle: Text(review.reviewText),
                         );
                       },
                     );
@@ -2189,7 +2192,7 @@ void main() {
     final films = await database.select(database.films).get();
     final reviews = await database.select(database.reviews).get();
     expect(films.single.title, 'Ponyo');
-    expect(reviews.single.text, 'Charming.');
+    expect(reviews.single.reviewText, 'Charming.');
     expect(reviews.single.rating, 5.0);
     expect(find.byType(AddEditReviewScreen), findsNothing);
   });
@@ -2269,7 +2272,7 @@ class AddEditReviewScreenState extends State<AddEditReviewScreen> {
   void initState() {
     super.initState();
     selectedFilm = widget.preselectedFilm;
-    textController.text = widget.existingReview?.text ?? '';
+    textController.text = widget.existingReview?.reviewText ?? '';
     rating = widget.existingReview?.rating ?? 0;
     watchDate = widget.existingReview?.watchDate ?? DateTime.now();
     newFilmController = FilmFieldsController();
@@ -2311,14 +2314,14 @@ class AddEditReviewScreenState extends State<AddEditReviewScreen> {
       await repos.reviewRepository.createReview(
         filmId: filmId,
         rating: rating,
-        text: textController.text.trim(),
+        reviewText: textController.text.trim(),
         watchDate: watchDate,
       );
     } else {
       await repos.reviewRepository.updateReview(
         id: widget.existingReview!.id,
         rating: rating,
-        text: textController.text.trim(),
+        reviewText: textController.text.trim(),
         watchDate: watchDate,
       );
     }
@@ -2478,7 +2481,7 @@ void main() {
     final reviewId = await reviewRepository.createReview(
       filmId: filmId,
       rating: 4,
-      text: 'Quietly lovely.',
+      reviewText: 'Quietly lovely.',
       watchDate: DateTime(2026, 4, 1),
     );
 
@@ -2595,7 +2598,7 @@ class ReviewDetailScreen extends StatelessWidget {
                 StarRatingInput(rating: entry.review.rating),
                 Text('Watched: ${entry.review.watchDate.toLocal().toString().split(' ').first}'),
                 const SizedBox(height: 8),
-                Text(entry.review.text),
+                Text(entry.review.reviewText),
               ],
             ),
           );
@@ -2670,9 +2673,9 @@ void main() {
 
     final filmId = await filmRepository.createFilm(title: 'Aftersun', year: 2022);
     final olderReviewId = await reviewRepository.createReview(
-        filmId: filmId, rating: 3, text: 'Old watch.', watchDate: DateTime(2026, 1, 1));
+        filmId: filmId, rating: 3, reviewText: 'Old watch.', watchDate: DateTime(2026, 1, 1));
     final recentReviewId = await reviewRepository.createReview(
-        filmId: filmId, rating: 5, text: 'Recent watch.', watchDate: DateTime(2026, 5, 1));
+        filmId: filmId, rating: 5, reviewText: 'Recent watch.', watchDate: DateTime(2026, 5, 1));
     await tester.pumpAndSettle();
 
     expect(find.byType(ListTile), findsNWidgets(2));
