@@ -1360,6 +1360,7 @@ git commit -m "Add AppRepositories InheritedWidget"
 ### Task 10: FilmFieldsController + FilmFieldsForm
 
 **Files:**
+- Modify: `local_reviews/pubspec.yaml` (add `image_picker: ^1.2.3` — not added in Task 1; this is its first use in the plan)
 - Create: `local_reviews/lib/widgets/film_fields_form.dart`
 - Test: `local_reviews/test/widgets/film_fields_form_test.dart`
 
@@ -1368,6 +1369,11 @@ git commit -m "Add AppRepositories InheritedWidget"
 - Produces:
   - `FilmFieldsController` — holds `titleController`/`yearController`/`directorController` (`TextEditingController`), `posterPath`/`selectedGenreIds` (`ValueNotifier`), computed getters `title`/`year`/`director`, static validators `validateTitle`/`validateYear`, and `dispose()`. Constructor takes optional `initialTitle`, `initialYear`, `initialDirector`, `initialPosterPath`, `initialGenreIds`.
   - `FilmFieldsForm` widget — constructor `FilmFieldsForm({Key? key, required FilmFieldsController controller, required List<Genre> allGenres, required PosterStorageService posterStorageService})`. Renders the poster picker, title/year/director fields, and genre chips. Used by both Task 11 (`AddEditFilmScreen`) and Task 14 (`AddEditReviewScreen`'s inline new-film form) — this is the DRY point for film-field UI, per the spec's shared-form design.
+
+- [ ] **Step 0: Add the image_picker dependency**
+
+Run: `cd local_reviews && flutter pub add image_picker:^1.2.3`
+(or add `image_picker: ^1.2.3` to the `dependencies:` block of `local_reviews/pubspec.yaml` and run `flutter pub get`). This is the plan's first use of `image_picker` — it was deliberately left out of Task 1's dependency list. Commit the `pubspec.yaml`/`pubspec.lock` change together with this task's other files in Step 5, not as a separate commit.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1572,7 +1578,7 @@ Expected: PASS (4 tests)
 - [ ] **Step 5: Commit**
 
 ```bash
-git add local_reviews/lib/widgets/film_fields_form.dart local_reviews/test/widgets/film_fields_form_test.dart
+git add local_reviews/pubspec.yaml local_reviews/pubspec.lock local_reviews/lib/widgets/film_fields_form.dart local_reviews/test/widgets/film_fields_form_test.dart
 git commit -m "Add FilmFieldsController and FilmFieldsForm"
 ```
 
