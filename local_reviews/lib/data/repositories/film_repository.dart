@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../services/poster_storage_service.dart';
 import '../database.dart';
 
 class FilmWithGenres {
@@ -10,9 +11,11 @@ class FilmWithGenres {
 }
 
 class FilmRepository {
-  FilmRepository(this._db);
+  FilmRepository(this._db, {PosterStorageService? posterStorageService})
+    : _posterStorageService = posterStorageService ?? PosterStorageService();
 
   final AppDatabase _db;
+  final PosterStorageService _posterStorageService;
 
   Stream<List<Genre>> watchAllGenres() => _db.select(_db.genres).watch();
 
@@ -22,15 +25,18 @@ class FilmRepository {
     return query.watch().asyncMap((films) async {
       final result = <FilmWithGenres>[];
       for (final film in films) {
-        result.add(FilmWithGenres(film: film, genres: await _genresForFilm(film.id)));
+        result.add(
+          FilmWithGenres(film: film, genres: await _genresForFilm(film.id)),
+        );
       }
       return result;
     });
   }
 
   Future<FilmWithGenres?> getFilmById(int id) async {
-    final film = await (_db.select(_db.films)..where((f) => f.id.equals(id)))
-        .getSingleOrNull();
+    final film = await (_db.select(
+      _db.films,
+    )..where((f) => f.id.equals(id))).getSingleOrNull();
     if (film == null) return null;
     return FilmWithGenres(film: film, genres: await _genresForFilm(id));
   }
@@ -38,8 +44,7 @@ class FilmRepository {
   Future<List<Genre>> _genresForFilm(int filmId) async {
     final query = _db.select(_db.filmGenres).join([
       innerJoin(_db.genres, _db.genres.id.equalsExp(_db.filmGenres.genreId)),
-    ])
-      ..where(_db.filmGenres.filmId.equals(filmId));
+    ])..where(_db.filmGenres.filmId.equals(filmId));
     final rows = await query.get();
     return rows.map((row) => row.readTable(_db.genres)).toList();
   }
@@ -52,12 +57,16 @@ class FilmRepository {
     List<int> genreIds = const [],
   }) {
     return _db.transaction(() async {
-      final id = await _db.into(_db.films).insert(FilmsCompanion.insert(
-            title: title,
-            year: year,
-            director: Value(director),
-            posterPath: Value(posterPath),
-          ));
+      final id = await _db
+          .into(_db.films)
+          .insert(
+            FilmsCompanion.insert(
+              title: title,
+              year: year,
+              director: Value(director),
+              posterPath: Value(posterPath),
+            ),
+          );
       await _linkGenres(id, genreIds);
       return id;
     });
@@ -80,7 +89,9 @@ class FilmRepository {
           posterPath: Value(posterPath),
         ),
       );
-      await (_db.delete(_db.filmGenres)..where((fg) => fg.filmId.equals(id))).go();
+      await (_db.delete(
+        _db.filmGenres,
+      )..where((fg) => fg.filmId.equals(id))).go();
       await _linkGenres(id, genreIds);
     });
   }
@@ -90,26 +101,34 @@ class FilmRepository {
     return _db.batch((batch) {
       batch.insertAll(
         _db.filmGenres,
-        genreIds.map((genreId) =>
-            FilmGenresCompanion.insert(filmId: filmId, genreId: genreId)),
+        genreIds.map(
+          (genreId) =>
+              FilmGenresCompanion.insert(filmId: filmId, genreId: genreId),
+        ),
       );
     });
   }
 
-  Future<void> deleteFilm(int id) =>
-      (_db.delete(_db.films)..where((f) => f.id.equals(id))).go();
+  Future<void> deleteFilm(int id) async {
+    final entry = await getFilmById(id);
+    await (_db.delete(_db.films)..where((f) => f.id.equals(id))).go();
+    final posterPath = entry?.film.posterPath;
+    if (posterPath != null) {
+      await _posterStorageService.deletePoster(posterPath);
+    }
+  }
 
   Future<int> reviewCountForFilm(int filmId) async {
-    final reviews = await (_db.select(_db.reviews)
-          ..where((r) => r.filmId.equals(filmId)))
-        .get();
+    final reviews = await (_db.select(
+      _db.reviews,
+    )..where((r) => r.filmId.equals(filmId))).get();
     return reviews.length;
   }
 
   Future<List<Film>> searchFilmsByTitle(String query) {
     final likePattern = '%$query%';
-    return (_db.select(_db.films)
-          ..where((f) => f.title.like(likePattern)))
-        .get();
+    return (_db.select(
+      _db.films,
+    )..where((f) => f.title.like(likePattern))).get();
   }
 }

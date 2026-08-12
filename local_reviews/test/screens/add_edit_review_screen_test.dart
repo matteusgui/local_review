@@ -136,4 +136,67 @@ void main() {
       expect(reviews.single.filmId, filmId);
     },
   );
+
+  testWidgets(
+    'shows an error and does not save when a film is selected but no rating is given',
+    (tester) async {
+      _growTestViewport(tester);
+      final database = AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+      addTearDown(database.close);
+      await FilmRepository(database).createFilm(title: 'Nausicaä', year: 1984);
+
+      await tester.pumpWidget(
+        AppRepositories(
+          database: database,
+          child: const MaterialApp(home: AddEditReviewScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('film_search_field')),
+        'Naus',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Nausicaä (1984)').last);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('review_text_field')),
+        'A classic.',
+      );
+      await tester.tap(find.byKey(const Key('save_review_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rating is required'), findsOneWidget);
+      expect(await database.select(database.reviews).get(), isEmpty);
+      expect(find.byType(AddEditReviewScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'shows an error and does not save when text and rating are filled but no film is selected',
+    (tester) async {
+      final database = await pumpScreen(tester);
+
+      await tester.enterText(
+        find.byKey(const Key('review_text_field')),
+        'Charming.',
+      );
+      await tester.tap(find.byKey(const ValueKey('star_3')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save_review_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Select or create a film'), findsOneWidget);
+      expect(await database.select(database.reviews).get(), isEmpty);
+      expect(find.byType(AddEditReviewScreen), findsOneWidget);
+    },
+  );
 }

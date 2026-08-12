@@ -15,11 +15,15 @@ class FilmFieldsController {
     String? initialDirector,
     String? initialPosterPath,
     Set<int> initialGenreIds = const {},
-  })  : titleController = TextEditingController(text: initialTitle ?? ''),
-        yearController = TextEditingController(text: initialYear?.toString() ?? ''),
-        directorController = TextEditingController(text: initialDirector ?? ''),
-        posterPath = ValueNotifier<String?>(initialPosterPath),
-        selectedGenreIds = ValueNotifier<Set<int>>(Set<int>.from(initialGenreIds));
+  }) : titleController = TextEditingController(text: initialTitle ?? ''),
+       yearController = TextEditingController(
+         text: initialYear?.toString() ?? '',
+       ),
+       directorController = TextEditingController(text: initialDirector ?? ''),
+       posterPath = ValueNotifier<String?>(initialPosterPath),
+       selectedGenreIds = ValueNotifier<Set<int>>(
+         Set<int>.from(initialGenreIds),
+       );
 
   final TextEditingController titleController;
   final TextEditingController yearController;
@@ -44,8 +48,9 @@ class FilmFieldsController {
 
   String get title => titleController.text.trim();
   int get year => int.parse(yearController.text.trim());
-  String? get director =>
-      directorController.text.trim().isEmpty ? null : directorController.text.trim();
+  String? get director => directorController.text.trim().isEmpty
+      ? null
+      : directorController.text.trim();
 
   void dispose() {
     titleController.dispose();
@@ -68,10 +73,34 @@ class FilmFieldsForm extends StatelessWidget {
   final List<Genre> allGenres;
   final PosterStorageService posterStorageService;
 
-  Future<void> _pickPoster() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _pickPoster(BuildContext context) async {
+    final XFile? picked;
+    try {
+      picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    } catch (_) {
+      // Picker failures (permission denied, user cancels, etc.) are silently
+      // ignored: posterPath stays null/unchanged, no error dialog, since the
+      // poster field is optional.
+      return;
+    }
     if (picked == null) return;
-    controller.posterPath.value = await posterStorageService.savePoster(File(picked.path));
+    if (!context.mounted) return;
+
+    final oldPosterPath = controller.posterPath.value;
+    try {
+      final newPosterPath = await posterStorageService.savePoster(
+        File(picked.path),
+      );
+      controller.posterPath.value = newPosterPath;
+      if (oldPosterPath != null) {
+        await posterStorageService.deletePoster(oldPosterPath);
+      }
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't save poster image")),
+      );
+    }
   }
 
   @override
@@ -82,7 +111,7 @@ class FilmFieldsForm extends StatelessWidget {
         ValueListenableBuilder<String?>(
           valueListenable: controller.posterPath,
           builder: (context, posterPath, _) => GestureDetector(
-            onTap: _pickPoster,
+            onTap: () => _pickPoster(context),
             child: PosterThumbnail(posterPath: posterPath, size: 96),
           ),
         ),

@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
+import 'package:local_reviews/services/poster_storage_service.dart';
+import 'package:path/path.dart' as p;
 
 import 'database_test.dart' show openTestDatabase;
 
@@ -62,10 +66,39 @@ void main() {
     expect(await repository.getFilmById(id), isNull);
   });
 
+  test('deleteFilm also deletes its poster file from disk', () async {
+    final tempDir = Directory.systemTemp.createTempSync('poster_storage_test');
+    addTearDown(() => tempDir.deleteSync(recursive: true));
+    final posterStorageService = PosterStorageService(
+      documentsDirectory: () async => tempDir,
+    );
+    final posterSource = File(p.join(tempDir.path, 'source.jpg'))
+      ..writeAsBytesSync([1, 2, 3]);
+    final posterPath = await posterStorageService.savePoster(posterSource);
+    final repositoryWithPosters = FilmRepository(
+      database,
+      posterStorageService: posterStorageService,
+    );
+
+    final id = await repositoryWithPosters.createFilm(
+      title: 'Deletable',
+      year: 2005,
+      posterPath: posterPath,
+    );
+    expect(File(posterPath).existsSync(), isTrue);
+
+    await repositoryWithPosters.deleteFilm(id);
+
+    expect(await repository.getFilmById(id), isNull);
+    expect(File(posterPath).existsSync(), isFalse);
+  });
+
   test('reviewCountForFilm counts reviews for that film only', () async {
     final filmId = await repository.createFilm(title: 'Counted', year: 2010);
     final otherFilmId = await repository.createFilm(title: 'Other', year: 2011);
-    await database.into(database.reviews).insert(
+    await database
+        .into(database.reviews)
+        .insert(
           ReviewsCompanion.insert(
             filmId: filmId,
             rating: 3,
@@ -73,7 +106,9 @@ void main() {
             watchDate: DateTime(2026, 1, 1),
           ),
         );
-    await database.into(database.reviews).insert(
+    await database
+        .into(database.reviews)
+        .insert(
           ReviewsCompanion.insert(
             filmId: otherFilmId,
             rating: 5,

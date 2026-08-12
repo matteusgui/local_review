@@ -28,6 +28,7 @@ class AddEditReviewScreenState extends State<AddEditReviewScreen> {
   DateTime watchDate = DateTime.now();
   Film? selectedFilm;
   bool creatingNewFilm = false;
+  bool _saveAttempted = false;
 
   @override
   void initState() {
@@ -52,8 +53,10 @@ class AddEditReviewScreenState extends State<AddEditReviewScreen> {
   }
 
   Future<void> _save() async {
+    setState(() => _saveAttempted = true);
     final formValid = formKey.currentState!.validate();
-    if (!formValid || rating <= 0) return;
+    final filmSelected = creatingNewFilm || selectedFilm != null;
+    if (!formValid || rating <= 0 || !filmSelected) return;
     final repos = AppRepositories.of(context);
 
     final int filmId;
@@ -65,10 +68,8 @@ class AddEditReviewScreenState extends State<AddEditReviewScreen> {
         posterPath: newFilmController.posterPath.value,
         genreIds: newFilmController.selectedGenreIds.value.toList(),
       );
-    } else if (selectedFilm != null) {
-      filmId = selectedFilm!.id;
     } else {
-      return;
+      filmId = selectedFilm!.id;
     }
 
     if (widget.existingReview == null) {
@@ -162,6 +163,18 @@ class AddEditReviewScreenState extends State<AddEditReviewScreen> {
                           allGenres: allGenres,
                           posterStorageService: repos.posterStorageService,
                         ),
+                      if (_saveAttempted &&
+                          !creatingNewFilm &&
+                          selectedFilm == null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Select or create a film',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
                     ] else
                       Text(
                         '${widget.preselectedFilm?.title} (${widget.preselectedFilm?.year})',
@@ -171,6 +184,16 @@ class AddEditReviewScreenState extends State<AddEditReviewScreen> {
                       rating: rating,
                       onChanged: (value) => setState(() => rating = value),
                     ),
+                    if (_saveAttempted && rating <= 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Rating is required',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
                     TextFormField(
                       key: const Key('review_text_field'),
                       controller: textController,
