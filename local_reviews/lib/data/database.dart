@@ -27,6 +27,16 @@ class FilmGenres extends Table {
   Set<Column> get primaryKey => {filmId, genreId};
 }
 
+class Reviews extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get filmId =>
+      integer().references(Films, #id, onDelete: KeyAction.cascade)();
+  RealColumn get rating => real()();
+  TextColumn get reviewText => text()();
+  DateTimeColumn get watchDate => dateTime()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 const seedGenreNames = [
   'Action',
   'Comedy',
@@ -40,7 +50,7 @@ const seedGenreNames = [
   'Fantasy',
 ];
 
-@DriftDatabase(tables: [Films, Genres, FilmGenres])
+@DriftDatabase(tables: [Films, Genres, FilmGenres, Reviews])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 

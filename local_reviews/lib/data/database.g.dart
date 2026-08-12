@@ -751,12 +751,411 @@ class FilmGenresCompanion extends UpdateCompanion<FilmGenre> {
   }
 }
 
+class $ReviewsTable extends Reviews with TableInfo<$ReviewsTable, Review> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReviewsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _filmIdMeta = const VerificationMeta('filmId');
+  @override
+  late final GeneratedColumn<int> filmId = GeneratedColumn<int>(
+    'film_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES films (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _ratingMeta = const VerificationMeta('rating');
+  @override
+  late final GeneratedColumn<double> rating = GeneratedColumn<double>(
+    'rating',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reviewTextMeta = const VerificationMeta(
+    'reviewText',
+  );
+  @override
+  late final GeneratedColumn<String> reviewText = GeneratedColumn<String>(
+    'review_text',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _watchDateMeta = const VerificationMeta(
+    'watchDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> watchDate = GeneratedColumn<DateTime>(
+    'watch_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    filmId,
+    rating,
+    reviewText,
+    watchDate,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reviews';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Review> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('film_id')) {
+      context.handle(
+        _filmIdMeta,
+        filmId.isAcceptableOrUnknown(data['film_id']!, _filmIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_filmIdMeta);
+    }
+    if (data.containsKey('rating')) {
+      context.handle(
+        _ratingMeta,
+        rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ratingMeta);
+    }
+    if (data.containsKey('review_text')) {
+      context.handle(
+        _reviewTextMeta,
+        reviewText.isAcceptableOrUnknown(data['review_text']!, _reviewTextMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reviewTextMeta);
+    }
+    if (data.containsKey('watch_date')) {
+      context.handle(
+        _watchDateMeta,
+        watchDate.isAcceptableOrUnknown(data['watch_date']!, _watchDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_watchDateMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Review map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Review(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      filmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}film_id'],
+      )!,
+      rating: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}rating'],
+      )!,
+      reviewText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}review_text'],
+      )!,
+      watchDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}watch_date'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ReviewsTable createAlias(String alias) {
+    return $ReviewsTable(attachedDatabase, alias);
+  }
+}
+
+class Review extends DataClass implements Insertable<Review> {
+  final int id;
+  final int filmId;
+  final double rating;
+  final String reviewText;
+  final DateTime watchDate;
+  final DateTime createdAt;
+  const Review({
+    required this.id,
+    required this.filmId,
+    required this.rating,
+    required this.reviewText,
+    required this.watchDate,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['film_id'] = Variable<int>(filmId);
+    map['rating'] = Variable<double>(rating);
+    map['review_text'] = Variable<String>(reviewText);
+    map['watch_date'] = Variable<DateTime>(watchDate);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ReviewsCompanion toCompanion(bool nullToAbsent) {
+    return ReviewsCompanion(
+      id: Value(id),
+      filmId: Value(filmId),
+      rating: Value(rating),
+      reviewText: Value(reviewText),
+      watchDate: Value(watchDate),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Review.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Review(
+      id: serializer.fromJson<int>(json['id']),
+      filmId: serializer.fromJson<int>(json['filmId']),
+      rating: serializer.fromJson<double>(json['rating']),
+      reviewText: serializer.fromJson<String>(json['reviewText']),
+      watchDate: serializer.fromJson<DateTime>(json['watchDate']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'filmId': serializer.toJson<int>(filmId),
+      'rating': serializer.toJson<double>(rating),
+      'reviewText': serializer.toJson<String>(reviewText),
+      'watchDate': serializer.toJson<DateTime>(watchDate),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Review copyWith({
+    int? id,
+    int? filmId,
+    double? rating,
+    String? reviewText,
+    DateTime? watchDate,
+    DateTime? createdAt,
+  }) => Review(
+    id: id ?? this.id,
+    filmId: filmId ?? this.filmId,
+    rating: rating ?? this.rating,
+    reviewText: reviewText ?? this.reviewText,
+    watchDate: watchDate ?? this.watchDate,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Review copyWithCompanion(ReviewsCompanion data) {
+    return Review(
+      id: data.id.present ? data.id.value : this.id,
+      filmId: data.filmId.present ? data.filmId.value : this.filmId,
+      rating: data.rating.present ? data.rating.value : this.rating,
+      reviewText: data.reviewText.present
+          ? data.reviewText.value
+          : this.reviewText,
+      watchDate: data.watchDate.present ? data.watchDate.value : this.watchDate,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Review(')
+          ..write('id: $id, ')
+          ..write('filmId: $filmId, ')
+          ..write('rating: $rating, ')
+          ..write('reviewText: $reviewText, ')
+          ..write('watchDate: $watchDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, filmId, rating, reviewText, watchDate, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Review &&
+          other.id == this.id &&
+          other.filmId == this.filmId &&
+          other.rating == this.rating &&
+          other.reviewText == this.reviewText &&
+          other.watchDate == this.watchDate &&
+          other.createdAt == this.createdAt);
+}
+
+class ReviewsCompanion extends UpdateCompanion<Review> {
+  final Value<int> id;
+  final Value<int> filmId;
+  final Value<double> rating;
+  final Value<String> reviewText;
+  final Value<DateTime> watchDate;
+  final Value<DateTime> createdAt;
+  const ReviewsCompanion({
+    this.id = const Value.absent(),
+    this.filmId = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.reviewText = const Value.absent(),
+    this.watchDate = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ReviewsCompanion.insert({
+    this.id = const Value.absent(),
+    required int filmId,
+    required double rating,
+    required String reviewText,
+    required DateTime watchDate,
+    this.createdAt = const Value.absent(),
+  }) : filmId = Value(filmId),
+       rating = Value(rating),
+       reviewText = Value(reviewText),
+       watchDate = Value(watchDate);
+  static Insertable<Review> custom({
+    Expression<int>? id,
+    Expression<int>? filmId,
+    Expression<double>? rating,
+    Expression<String>? reviewText,
+    Expression<DateTime>? watchDate,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (filmId != null) 'film_id': filmId,
+      if (rating != null) 'rating': rating,
+      if (reviewText != null) 'review_text': reviewText,
+      if (watchDate != null) 'watch_date': watchDate,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ReviewsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? filmId,
+    Value<double>? rating,
+    Value<String>? reviewText,
+    Value<DateTime>? watchDate,
+    Value<DateTime>? createdAt,
+  }) {
+    return ReviewsCompanion(
+      id: id ?? this.id,
+      filmId: filmId ?? this.filmId,
+      rating: rating ?? this.rating,
+      reviewText: reviewText ?? this.reviewText,
+      watchDate: watchDate ?? this.watchDate,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (filmId.present) {
+      map['film_id'] = Variable<int>(filmId.value);
+    }
+    if (rating.present) {
+      map['rating'] = Variable<double>(rating.value);
+    }
+    if (reviewText.present) {
+      map['review_text'] = Variable<String>(reviewText.value);
+    }
+    if (watchDate.present) {
+      map['watch_date'] = Variable<DateTime>(watchDate.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReviewsCompanion(')
+          ..write('id: $id, ')
+          ..write('filmId: $filmId, ')
+          ..write('rating: $rating, ')
+          ..write('reviewText: $reviewText, ')
+          ..write('watchDate: $watchDate, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $FilmsTable films = $FilmsTable(this);
   late final $GenresTable genres = $GenresTable(this);
   late final $FilmGenresTable filmGenres = $FilmGenresTable(this);
+  late final $ReviewsTable reviews = $ReviewsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -765,6 +1164,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     films,
     genres,
     filmGenres,
+    reviews,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -781,6 +1181,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('film_genres', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'films',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('reviews', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -819,6 +1226,25 @@ final class $$FilmsTableReferences
     ).filter((f) => f.filmId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_filmGenresRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$ReviewsTable, List<Review>> _reviewsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.reviews,
+    aliasName: 'films__id__reviews__film_id',
+  );
+
+  $$ReviewsTableProcessedTableManager get reviewsRefs {
+    final manager = $$ReviewsTableTableManager(
+      $_db,
+      $_db.reviews,
+    ).filter((f) => f.filmId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_reviewsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -874,6 +1300,31 @@ class $$FilmsTableFilterComposer extends Composer<_$AppDatabase, $FilmsTable> {
           }) => $$FilmGenresTableFilterComposer(
             $db: $db,
             $table: $db.filmGenres,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> reviewsRefs(
+    Expression<bool> Function($$ReviewsTableFilterComposer f) f,
+  ) {
+    final $$ReviewsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reviews,
+      getReferencedColumn: (t) => t.filmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReviewsTableFilterComposer(
+            $db: $db,
+            $table: $db.reviews,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -969,6 +1420,31 @@ class $$FilmsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> reviewsRefs<T extends Object>(
+    Expression<T> Function($$ReviewsTableAnnotationComposer a) f,
+  ) {
+    final $$ReviewsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.reviews,
+      getReferencedColumn: (t) => t.filmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReviewsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.reviews,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$FilmsTableTableManager
@@ -984,7 +1460,7 @@ class $$FilmsTableTableManager
           $$FilmsTableUpdateCompanionBuilder,
           (Film, $$FilmsTableReferences),
           Film,
-          PrefetchHooks Function({bool filmGenresRefs})
+          PrefetchHooks Function({bool filmGenresRefs, bool reviewsRefs})
         > {
   $$FilmsTableTableManager(_$AppDatabase db, $FilmsTable table)
     : super(
@@ -1031,28 +1507,51 @@ class $$FilmsTableTableManager
                     (e.readTable(table), $$FilmsTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({filmGenresRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (filmGenresRefs) db.filmGenres],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (filmGenresRefs)
-                    await $_getPrefetchedData<Film, $FilmsTable, FilmGenre>(
-                      currentTable: table,
-                      referencedTable: $$FilmsTableReferences
-                          ._filmGenresRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$FilmsTableReferences(db, table, p0).filmGenresRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.filmId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({filmGenresRefs = false, reviewsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (filmGenresRefs) db.filmGenres,
+                    if (reviewsRefs) db.reviews,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (filmGenresRefs)
+                        await $_getPrefetchedData<Film, $FilmsTable, FilmGenre>(
+                          currentTable: table,
+                          referencedTable: $$FilmsTableReferences
+                              ._filmGenresRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FilmsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).filmGenresRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.filmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (reviewsRefs)
+                        await $_getPrefetchedData<Film, $FilmsTable, Review>(
+                          currentTable: table,
+                          referencedTable: $$FilmsTableReferences
+                              ._reviewsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$FilmsTableReferences(db, table, p0).reviewsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.filmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -1069,7 +1568,7 @@ typedef $$FilmsTableProcessedTableManager =
       $$FilmsTableUpdateCompanionBuilder,
       (Film, $$FilmsTableReferences),
       Film,
-      PrefetchHooks Function({bool filmGenresRefs})
+      PrefetchHooks Function({bool filmGenresRefs, bool reviewsRefs})
     >;
 typedef $$GenresTableCreateCompanionBuilder =
     GenresCompanion Function({Value<int> id, required String name});
@@ -1631,6 +2130,338 @@ typedef $$FilmGenresTableProcessedTableManager =
       FilmGenre,
       PrefetchHooks Function({bool filmId, bool genreId})
     >;
+typedef $$ReviewsTableCreateCompanionBuilder =
+    ReviewsCompanion Function({
+      Value<int> id,
+      required int filmId,
+      required double rating,
+      required String reviewText,
+      required DateTime watchDate,
+      Value<DateTime> createdAt,
+    });
+typedef $$ReviewsTableUpdateCompanionBuilder =
+    ReviewsCompanion Function({
+      Value<int> id,
+      Value<int> filmId,
+      Value<double> rating,
+      Value<String> reviewText,
+      Value<DateTime> watchDate,
+      Value<DateTime> createdAt,
+    });
+
+final class $$ReviewsTableReferences
+    extends BaseReferences<_$AppDatabase, $ReviewsTable, Review> {
+  $$ReviewsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $FilmsTable _filmIdTable(_$AppDatabase db) =>
+      db.films.createAlias('reviews__film_id__films__id');
+
+  $$FilmsTableProcessedTableManager get filmId {
+    final $_column = $_itemColumn<int>('film_id')!;
+
+    final manager = $$FilmsTableTableManager(
+      $_db,
+      $_db.films,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_filmIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ReviewsTableFilterComposer
+    extends Composer<_$AppDatabase, $ReviewsTable> {
+  $$ReviewsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reviewText => $composableBuilder(
+    column: $table.reviewText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get watchDate => $composableBuilder(
+    column: $table.watchDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$FilmsTableFilterComposer get filmId {
+    final $$FilmsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.filmId,
+      referencedTable: $db.films,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FilmsTableFilterComposer(
+            $db: $db,
+            $table: $db.films,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReviewsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ReviewsTable> {
+  $$ReviewsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rating => $composableBuilder(
+    column: $table.rating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reviewText => $composableBuilder(
+    column: $table.reviewText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get watchDate => $composableBuilder(
+    column: $table.watchDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$FilmsTableOrderingComposer get filmId {
+    final $$FilmsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.filmId,
+      referencedTable: $db.films,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FilmsTableOrderingComposer(
+            $db: $db,
+            $table: $db.films,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReviewsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ReviewsTable> {
+  $$ReviewsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => column);
+
+  GeneratedColumn<String> get reviewText => $composableBuilder(
+    column: $table.reviewText,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get watchDate =>
+      $composableBuilder(column: $table.watchDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$FilmsTableAnnotationComposer get filmId {
+    final $$FilmsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.filmId,
+      referencedTable: $db.films,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FilmsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.films,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ReviewsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ReviewsTable,
+          Review,
+          $$ReviewsTableFilterComposer,
+          $$ReviewsTableOrderingComposer,
+          $$ReviewsTableAnnotationComposer,
+          $$ReviewsTableCreateCompanionBuilder,
+          $$ReviewsTableUpdateCompanionBuilder,
+          (Review, $$ReviewsTableReferences),
+          Review,
+          PrefetchHooks Function({bool filmId})
+        > {
+  $$ReviewsTableTableManager(_$AppDatabase db, $ReviewsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReviewsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReviewsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ReviewsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> filmId = const Value.absent(),
+                Value<double> rating = const Value.absent(),
+                Value<String> reviewText = const Value.absent(),
+                Value<DateTime> watchDate = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ReviewsCompanion(
+                id: id,
+                filmId: filmId,
+                rating: rating,
+                reviewText: reviewText,
+                watchDate: watchDate,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int filmId,
+                required double rating,
+                required String reviewText,
+                required DateTime watchDate,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ReviewsCompanion.insert(
+                id: id,
+                filmId: filmId,
+                rating: rating,
+                reviewText: reviewText,
+                watchDate: watchDate,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ReviewsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({filmId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (filmId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.filmId,
+                                referencedTable: $$ReviewsTableReferences
+                                    ._filmIdTable(db),
+                                referencedColumn: $$ReviewsTableReferences
+                                    ._filmIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ReviewsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ReviewsTable,
+      Review,
+      $$ReviewsTableFilterComposer,
+      $$ReviewsTableOrderingComposer,
+      $$ReviewsTableAnnotationComposer,
+      $$ReviewsTableCreateCompanionBuilder,
+      $$ReviewsTableUpdateCompanionBuilder,
+      (Review, $$ReviewsTableReferences),
+      Review,
+      PrefetchHooks Function({bool filmId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1641,4 +2472,6 @@ class $AppDatabaseManager {
       $$GenresTableTableManager(_db, _db.genres);
   $$FilmGenresTableTableManager get filmGenres =>
       $$FilmGenresTableTableManager(_db, _db.filmGenres);
+  $$ReviewsTableTableManager get reviews =>
+      $$ReviewsTableTableManager(_db, _db.reviews);
 }
