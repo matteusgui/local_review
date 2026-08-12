@@ -86,15 +86,11 @@ class FilmFieldsForm extends StatelessWidget {
     if (picked == null) return;
     if (!context.mounted) return;
 
-    final oldPosterPath = controller.posterPath.value;
     try {
       final newPosterPath = await posterStorageService.savePoster(
         File(picked.path),
       );
       controller.posterPath.value = newPosterPath;
-      if (oldPosterPath != null) {
-        await posterStorageService.deletePoster(oldPosterPath);
-      }
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

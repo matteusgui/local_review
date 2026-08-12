@@ -5,7 +5,11 @@ import '../../data/database.dart';
 import '../../widgets/film_fields_form.dart';
 
 class AddEditFilmScreen extends StatefulWidget {
-  const AddEditFilmScreen({super.key, this.existingFilm, this.existingGenreIds = const {}});
+  const AddEditFilmScreen({
+    super.key,
+    this.existingFilm,
+    this.existingGenreIds = const {},
+  });
 
   final Film? existingFilm;
   final Set<int> existingGenreIds;
@@ -48,14 +52,19 @@ class AddEditFilmScreenState extends State<AddEditFilmScreen> {
         genreIds: fieldsController.selectedGenreIds.value.toList(),
       );
     } else {
+      final oldPosterPath = widget.existingFilm!.posterPath;
+      final newPosterPath = fieldsController.posterPath.value;
       await repos.filmRepository.updateFilm(
         id: widget.existingFilm!.id,
         title: fieldsController.title,
         year: fieldsController.year,
         director: fieldsController.director,
-        posterPath: fieldsController.posterPath.value,
+        posterPath: newPosterPath,
         genreIds: fieldsController.selectedGenreIds.value.toList(),
       );
+      if (oldPosterPath != null && oldPosterPath != newPosterPath) {
+        await repos.posterStorageService.deletePoster(oldPosterPath);
+      }
     }
     if (mounted) Navigator.of(context).pop();
   }
@@ -64,7 +73,9 @@ class AddEditFilmScreenState extends State<AddEditFilmScreen> {
   Widget build(BuildContext context) {
     final repos = AppRepositories.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.existingFilm == null ? 'Add film' : 'Edit film')),
+      appBar: AppBar(
+        title: Text(widget.existingFilm == null ? 'Add film' : 'Edit film'),
+      ),
       body: StreamBuilder<List<Genre>>(
         stream: repos.filmRepository.watchAllGenres(),
         builder: (context, snapshot) {
