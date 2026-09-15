@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -75,7 +74,7 @@ QueryExecutor openEncryptedExecutor({
 
 @DriftDatabase(tables: [Films, Genres, FilmGenres, Reviews])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
+  AppDatabase(super.executor);
 
   @override
   int get schemaVersion => 1;
@@ -95,13 +94,4 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
-
-  static QueryExecutor _openConnection() {
-    return driftDatabase(
-      name: 'local_reviews',
-      native: const DriftNativeOptions(
-        databaseDirectory: getApplicationSupportDirectory,
-      ),
-    );
-  }
 }

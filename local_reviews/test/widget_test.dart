@@ -2,8 +2,8 @@ import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:local_reviews/app.dart';
 import 'package:local_reviews/data/database.dart';
-import 'package:local_reviews/main.dart';
 import 'package:local_reviews/services/poster_cipher_service.dart';
 import 'package:local_reviews/services/poster_storage_service.dart';
 
