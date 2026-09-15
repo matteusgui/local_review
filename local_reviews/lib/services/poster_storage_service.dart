@@ -33,7 +33,7 @@ class PosterStorageService {
 
   Future<Uint8List> loadDecrypted(String posterPath) async {
     final cipherBytes = await File(posterPath).readAsBytes();
-    return _cipherService.decrypt(cipherBytes);
+    return await _cipherService.decrypt(cipherBytes);
   }
 
   Future<void> deletePoster(String posterPath) async {
