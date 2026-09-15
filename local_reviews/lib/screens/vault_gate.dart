@@ -76,21 +76,52 @@ class _VaultGateState extends State<VaultGate> {
   }
 }
 
-class _UnlockedApp extends StatelessWidget {
+class _UnlockedApp extends StatefulWidget {
   const _UnlockedApp({required this.state});
 
   final VaultUnlocked state;
 
+  @override
+  State<_UnlockedApp> createState() => _UnlockedAppState();
+}
+
+class _UnlockedAppState extends State<_UnlockedApp> {
+  late Future<AppDatabase> _databaseFuture;
+  AppDatabase? _database;
+
+  @override
+  void initState() {
+    super.initState();
+    _databaseFuture = _openDatabase()..then((db) => _database = db);
+  }
+
   Future<AppDatabase> _openDatabase() async {
     final file = await resolveDatabaseFile();
-    return AppDatabase(openEncryptedExecutor(file: file, key: state.dbKey));
+    return AppDatabase(
+      openEncryptedExecutor(file: file, key: widget.state.dbKey),
+    );
+  }
+
+  @override
+  void dispose() {
+    _database?.close();
+    super.dispose();
+  }
+
+  void _retry() {
+    setState(() {
+      _databaseFuture = _openDatabase()..then((db) => _database = db);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<AppDatabase>(
-      future: _openDatabase(),
+      future: _databaseFuture,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _ErrorApp(error: snapshot.error!, onRetry: _retry);
+        }
         final database = snapshot.data;
         if (database == null) {
           return const MaterialApp(
@@ -100,7 +131,7 @@ class _UnlockedApp extends StatelessWidget {
         return LocalReviewsApp(
           database: database,
           posterStorageService: PosterStorageService(
-            cipherService: PosterCipherService(SecretKey(state.posterKey)),
+            cipherService: PosterCipherService(SecretKey(widget.state.posterKey)),
           ),
         );
       },
