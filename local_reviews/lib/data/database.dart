@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
@@ -49,6 +53,25 @@ const seedGenreNames = [
   'Romance',
   'Fantasy',
 ];
+
+Future<File> resolveDatabaseFile() async {
+  final dir = await getApplicationSupportDirectory();
+  return File(p.join(dir.path, 'local_reviews.sqlite'));
+}
+
+QueryExecutor openEncryptedExecutor({
+  required File file,
+  required Uint8List key,
+}) {
+  final keyHex = key.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return NativeDatabase.createInBackground(
+    file,
+    setup: (rawDb) {
+      rawDb.execute("PRAGMA key = \"x'$keyHex'\";");
+      assert(rawDb.select('PRAGMA cipher;').isNotEmpty);
+    },
+  );
+}
 
 @DriftDatabase(tables: [Films, Genres, FilmGenres, Reviews])
 class AppDatabase extends _$AppDatabase {
