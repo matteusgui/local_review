@@ -44,6 +44,11 @@ class _RestoreScreenState extends State<RestoreScreen> {
         _busy = false;
         _error = "This phrase doesn't match the data on this device.";
       });
+    } catch (_) {
+      setState(() {
+        _busy = false;
+        _error = 'Something went wrong. Please try again.';
+      });
     }
   }
 

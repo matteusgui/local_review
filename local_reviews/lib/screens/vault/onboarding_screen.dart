@@ -64,8 +64,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _busy = true;
       _error = null;
     });
-    final unlocked = await widget.vaultService.completeOnboarding(_mnemonic);
-    widget.onUnlocked(unlocked);
+    try {
+      final unlocked = await widget.vaultService.completeOnboarding(_mnemonic);
+      widget.onUnlocked(unlocked);
+    } catch (_) {
+      setState(() {
+        _busy = false;
+        _error = 'Something went wrong saving your recovery phrase. '
+            'Please try again.';
+      });
+    }
   }
 
   @override
