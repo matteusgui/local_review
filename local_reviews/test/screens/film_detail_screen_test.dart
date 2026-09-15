@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,12 @@ import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
 import 'package:local_reviews/data/repositories/review_repository.dart';
 import 'package:local_reviews/screens/films/film_detail_screen.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
+import 'package:local_reviews/services/poster_storage_service.dart';
+
+PosterStorageService _testPosterStorageService() => PosterStorageService(
+      cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+    );
 
 void main() {
   testWidgets('delete confirmation states how many reviews will be removed',
@@ -15,7 +22,10 @@ void main() {
       DatabaseConnection(NativeDatabase.memory(), closeStreamsSynchronously: true),
     );
     addTearDown(database.close);
-    final filmRepository = FilmRepository(database);
+    final filmRepository = FilmRepository(
+      database,
+      posterStorageService: _testPosterStorageService(),
+    );
     final reviewRepository = ReviewRepository(database);
 
     final filmId = await filmRepository.createFilm(title: 'Deletable', year: 2005);
@@ -27,6 +37,7 @@ void main() {
     await tester.pumpWidget(
       AppRepositories(
         database: database,
+        posterStorageService: _testPosterStorageService(),
         child: MaterialApp(home: FilmDetailScreen(filmId: filmId)),
       ),
     );

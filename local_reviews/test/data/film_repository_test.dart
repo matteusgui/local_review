@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
 import 'package:local_reviews/services/poster_storage_service.dart';
 import 'package:path/path.dart' as p;
 
@@ -14,7 +16,12 @@ void main() {
 
   setUp(() {
     database = openTestDatabase();
-    repository = FilmRepository(database);
+    repository = FilmRepository(
+      database,
+      posterStorageService: PosterStorageService(
+        cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+      ),
+    );
   });
   tearDown(() => database.close());
 
@@ -71,6 +78,7 @@ void main() {
     addTearDown(() => tempDir.deleteSync(recursive: true));
     final posterStorageService = PosterStorageService(
       documentsDirectory: () async => tempDir,
+      cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
     );
     final posterSource = File(p.join(tempDir.path, 'source.jpg'))
       ..writeAsBytesSync([1, 2, 3]);

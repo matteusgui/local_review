@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/app_repositories.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/screens/films/add_edit_film_screen.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
+import 'package:local_reviews/services/poster_storage_service.dart';
 
 Future<AppDatabase> pumpScreen(WidgetTester tester, {Widget? screen}) async {
   final database = AppDatabase(
@@ -15,6 +18,9 @@ Future<AppDatabase> pumpScreen(WidgetTester tester, {Widget? screen}) async {
   await tester.pumpWidget(
     AppRepositories(
       database: database,
+      posterStorageService: PosterStorageService(
+        cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+      ),
       child: MaterialApp(home: screen ?? const AddEditFilmScreen()),
     ),
   );

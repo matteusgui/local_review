@@ -9,18 +9,16 @@ class AppRepositories extends InheritedWidget {
   factory AppRepositories({
     Key? key,
     required AppDatabase database,
+    required PosterStorageService posterStorageService,
     required Widget child,
-    PosterStorageService? posterStorageService,
   }) {
-    final resolvedPosterStorageService =
-        posterStorageService ?? PosterStorageService();
     return AppRepositories._(
       key: key,
       database: database,
-      posterStorageService: resolvedPosterStorageService,
+      posterStorageService: posterStorageService,
       filmRepository: FilmRepository(
         database,
-        posterStorageService: resolvedPosterStorageService,
+        posterStorageService: posterStorageService,
       ),
       reviewRepository: ReviewRepository(database),
       child: child,

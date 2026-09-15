@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/app_repositories.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/screens/navigation_shell.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
+import 'package:local_reviews/services/poster_storage_service.dart';
 
 Future<AppDatabase> pumpShell(WidgetTester tester, Size size) async {
   tester.view.physicalSize = size;
@@ -20,6 +23,9 @@ Future<AppDatabase> pumpShell(WidgetTester tester, Size size) async {
   await tester.pumpWidget(
     AppRepositories(
       database: database,
+      posterStorageService: PosterStorageService(
+        cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+      ),
       child: const MaterialApp(home: NavigationShell()),
     ),
   );
