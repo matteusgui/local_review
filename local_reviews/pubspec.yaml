@@ -41,6 +41,7 @@ dependencies:
   image_picker: ^1.2.3
   bip39: ^1.0.6
   cryptography: ^2.9.0
+  flutter_secure_storage: ^11.1.1
 
 dev_dependencies:
   flutter_test:
