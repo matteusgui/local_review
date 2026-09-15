@@ -30,15 +30,21 @@ class _VaultGateState extends State<VaultGate> {
   }
 
   void _onUnlocked(VaultUnlocked unlocked) {
-    setState(() => _stateFuture = Future.value(unlocked));
+    setState(() {
+      _stateFuture = Future.value(unlocked);
+    });
   }
 
   void _onStartFresh() {
-    setState(() => _stateFuture = Future.value(const VaultNeedsOnboarding()));
+    setState(() {
+      _stateFuture = Future.value(const VaultNeedsOnboarding());
+    });
   }
 
   void _retry() {
-    setState(() => _stateFuture = widget.vaultService.resolveInitialState());
+    setState(() {
+      _stateFuture = widget.vaultService.resolveInitialState();
+    });
   }
 
   @override
