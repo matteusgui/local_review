@@ -27,6 +27,7 @@ Out of scope (explicitly deferred):
 - An additional app-level lock screen / biometric prompt on every launch — the design relies on the OS's own Keychain/Keystore protection at read time (see "Unlock flow" below). Could be added later as a separate feature.
 - Web platform — target platforms for this feature are Android, iOS, Linux, macOS, Windows, matching the existing manual-film-entry feature's scope.
 - Any UI for viewing/exporting the recovery phrase again after onboarding (e.g., a settings-screen "show recovery phrase" action) — not needed until a restore or account-recovery flow calls for it beyond what's specced here.
+- Bundling or depending on a Linux Secret Service provider (e.g. packaging GNOME Keyring as an app dependency) to guarantee a keyring is available out of the box on Linux — deferred; see "Secure seed storage across platforms" below for how this case is handled for now. Worth revisiting as a dedicated follow-up once real Linux usage shows how often this actually comes up.
 
 ## Key derivation
 
@@ -61,6 +62,17 @@ info=         info=
 | `vault_service.dart` | Orchestrates the above; resolves the initial `VaultState`, exposes `createVault()` (onboarding) and `restoreVault(phrase)` (restore) |
 
 And in `lib/services/`: `poster_cipher_service.dart` — AES-256-GCM encrypt/decrypt of raw bytes given the poster key.
+
+## Secure seed storage across platforms
+
+`flutter_secure_storage` backs `secure_seed_storage.dart` with a different OS-native store per platform:
+
+- **iOS / macOS**: Keychain — no gap, this is the mechanism the rest of this spec means by "Keychain".
+- **Android**: Keystore-backed encrypted storage — no gap, this is the mechanism the rest of this spec means by "Keystore".
+- **Windows**: Windows Credential Manager (DPAPI-backed) — no gap.
+- **Linux**: `libsecret`, which itself depends on a *running* Secret Service provider (GNOME Keyring, KWallet, or another compatible implementation). This is an environment dependency, not just a library one — some Linux setups (minimal window managers, headless/server environments) may have no Secret Service running at all, and every read/write will fail.
+
+For Linux specifically, when `SecureSeedStorage` detects that no Secret Service is available (the underlying `flutter_secure_storage` call fails for that reason), the blocking error screen described in "Error handling" shows an actionable message — e.g. "No secure keyring service found — install and start GNOME Keyring, KWallet, or another Secret Service-compatible provider" — instead of a generic failure message, so the user knows what to fix. No alternative, app-managed fallback store is introduced for this case: without a real OS-backed keyring, anything we build ourselves would be obfuscation rather than actual protection, which would undermine the point of this feature. See "Out of scope" above for a possible future follow-up (bundling/depending on a Linux keyring provider) once real Linux usage shows how often this matters in practice.
 
 ## Database encryption
 
@@ -112,7 +124,7 @@ And in `lib/services/`: `poster_cipher_service.dart` — AES-256-GCM encrypt/dec
 
 ## Error handling
 
-- Secure storage read/write failure (e.g., no secure enclave available): blocking error screen with a retry action — the app cannot function without the seed, by design.
+- Secure storage read/write failure: blocking error screen with a retry action — the app cannot function without the seed, by design. On Linux, a failure caused by no Secret Service running gets the specific actionable message described in "Secure seed storage across platforms" rather than a generic one; other platforms/causes get a generic message.
 - Invalid recovery phrase (BIP-39 checksum failure): inline error before any database access is attempted.
 - Valid phrase that doesn't match the existing database: inline error from the trial-query failure (see above); no partial writes.
 - Corrupted/tampered poster file (GCM tag mismatch on decrypt): falls back to the existing placeholder in `PosterThumbnail`, does not crash the screen.
@@ -121,6 +133,7 @@ And in `lib/services/`: `poster_cipher_service.dart` — AES-256-GCM encrypt/dec
 
 - `mnemonic_service_test.dart`: valid mnemonic generation; `validateMnemonic` true/false cases; a pinned official BIP-39 test vector to confirm `mnemonicToSeed` is deterministic and spec-correct.
 - `seed_key_derivation_test.dart`: same seed + same `info` → same key, deterministically; `dbKey != posterKey` for the same seed.
+- `secure_seed_storage_test.dart`: a fake `flutter_secure_storage` backend that throws a "no Secret Service" style error maps to the Linux-specific actionable message; other failures map to the generic one.
 - `vault_service_test.dart`: all three initial states, using fakes for secure storage and for the "database file exists" check; the restore flow's wrong-phrase path leaves no persisted state.
 - `poster_cipher_service_test.dart`: encrypt/decrypt round-trip; a single flipped ciphertext byte causes decryption to throw (GCM authentication).
 - `poster_storage_service_test.dart`: existing tests assert saved bytes equal the original source bytes — that assumption no longer holds once encryption is wired in. `PosterStorageService` gets a constructor-injectable cipher (mirroring the existing `documentsDirectory` injection point) so the current tests can keep verifying file-placement/naming behavior against a pass-through fake cipher, with new tests added specifically for the real-cipher round trip.
