@@ -67,7 +67,13 @@ QueryExecutor openEncryptedExecutor({
     file,
     setup: (rawDb) {
       rawDb.execute("PRAGMA key = \"x'$keyHex'\";");
-      assert(rawDb.select('PRAGMA cipher;').isNotEmpty);
+      if (rawDb.select('PRAGMA cipher;').isEmpty) {
+        throw StateError(
+          'SQLite3MultipleCiphers is not active — refusing to open the '
+          'database unencrypted. Check the sqlite3mc build hook in '
+          'pubspec.yaml.',
+        );
+      }
     },
   );
 }
