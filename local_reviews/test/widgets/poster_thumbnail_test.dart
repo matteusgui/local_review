@@ -44,21 +44,25 @@ void main() {
     );
     final sourceFile = File(p.join(tempDir.path, 'source.png'))
       ..writeAsBytesSync(_onePixelPng);
-    final posterPath = await posterStorageService.savePoster(sourceFile);
 
     final database = AppDatabase(
       DatabaseConnection(NativeDatabase.memory(), closeStreamsSynchronously: true),
     );
     addTearDown(database.close);
 
-    await tester.pumpWidget(
-      AppRepositories(
-        database: database,
-        posterStorageService: posterStorageService,
-        child: MaterialApp(home: PosterThumbnail(posterPath: posterPath)),
-      ),
-    );
-    await tester.pumpAndSettle();
+    late String posterPath;
+    await tester.runAsync(() async {
+      posterPath = await posterStorageService.savePoster(sourceFile);
+      await tester.pumpWidget(
+        AppRepositories(
+          database: database,
+          posterStorageService: posterStorageService,
+          child: MaterialApp(home: PosterThumbnail(posterPath: posterPath)),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await tester.pump();
+    });
 
     expect(find.byIcon(Icons.movie_outlined), findsNothing);
     expect(find.byType(Image), findsOneWidget);
