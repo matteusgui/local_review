@@ -13,6 +13,8 @@ import 'package:local_reviews/services/poster_storage_service.dart';
 import 'package:local_reviews/widgets/poster_thumbnail.dart';
 import 'package:path/path.dart' as p;
 
+import '../support/pump_until.dart';
+
 // A minimal valid 1x1 transparent PNG, used so Image.memory can decode it.
 final _onePixelPng = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY'
@@ -60,8 +62,7 @@ void main() {
           child: MaterialApp(home: PosterThumbnail(posterPath: posterPath)),
         ),
       );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await tester.pump();
+      await pumpUntil(tester, find.byType(Image));
     });
 
     expect(find.byIcon(Icons.movie_outlined), findsNothing);

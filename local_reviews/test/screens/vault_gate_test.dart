@@ -8,6 +8,7 @@ import 'package:local_reviews/vault/secure_seed_storage.dart';
 import 'package:local_reviews/vault/vault_service.dart';
 import 'package:path/path.dart' as p;
 
+import '../support/pump_until.dart';
 import '../vault/fakes.dart';
 
 // Unlike VaultService's own file/directory lookups (injected above via
@@ -50,8 +51,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(VaultGate(vaultService: service));
       await tester.pump();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      await tester.pump();
+      await pumpUntil(tester, find.text('Set up local encryption'));
     });
 
     expect(find.text('Set up local encryption'), findsOneWidget);
@@ -75,8 +75,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(VaultGate(vaultService: service));
       await tester.pump();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      await tester.pump();
+      await pumpUntil(tester, find.text('Restore from recovery phrase'));
     });
 
     expect(find.text('Restore from recovery phrase'), findsOneWidget);
@@ -114,13 +113,12 @@ void main() {
       // Two nested FutureBuilders are involved here: VaultGate's own
       // _stateFuture (fast — fake seed storage + real key derivation), then
       // _UnlockedApp's _openDatabase() (a real background-isolate database
-      // open). Neither pending future's spinner lets pumpAndSettle() settle,
-      // so give each a real wall-clock turn with a plain pump() instead.
+      // open — the slowest and most timing-sensitive step in this file).
+      // Neither pending future's spinner lets pumpAndSettle() settle, so
+      // wait for the final screen's content to appear instead of guessing a
+      // fixed wall-clock budget for the isolate spawn.
       await tester.pump();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      await tester.pump();
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      await tester.pump();
+      await pumpUntil(tester, find.text('No reviews yet'));
 
       expect(find.text('No reviews yet'), findsOneWidget);
 
@@ -131,9 +129,40 @@ void main() {
       // runAsync() block exits, it becomes a FakeTimer that never fires and
       // fails the test's "no pending timers" invariant. Dispose the tree
       // here, inside runAsync, so the real Timer actually runs to
-      // completion before the test ends.
+      // completion before the test ends. There's no widget/condition to
+      // poll for here — this is just giving the already-scheduled real
+      // Timer.zero a wall-clock turn to fire — so it keeps a short fixed
+      // delay rather than pumpUntil.
       await tester.pumpWidget(Container());
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
+  });
+
+  testWidgets(
+      'shows the Linux-specific keyring error message when secure storage '
+      'is unavailable', (tester) async {
+    final tempDir = Directory.systemTemp.createTempSync('vault_gate_test');
+    addTearDown(() => tempDir.deleteSync(recursive: true));
+    final service = VaultService(
+      secureSeedStorage: SecureSeedStorage(
+        store: FakeSeedKeyValueStore(failWith: Exception('no keyring')),
+        isLinux: () => true,
+      ),
+      databaseFileResolver: () async =>
+          File(p.join(tempDir.path, 'test.sqlite')),
+      documentsDirectory: () async => tempDir,
+    );
+
+    // Reading the seed fails synchronously inside FakeSeedKeyValueStore
+    // (no real I/O involved), so resolveInitialState()'s returned future
+    // resolves with an error on a normal microtask turn — this doesn't
+    // need tester.runAsync().
+    await tester.pumpWidget(VaultGate(vaultService: service));
+    await tester.pump();
+
+    expect(
+      find.textContaining('No secure keyring service found'),
+      findsOneWidget,
+    );
   });
 }

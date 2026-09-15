@@ -10,6 +10,7 @@ import 'package:local_reviews/vault/vault_service.dart';
 import 'package:local_reviews/vault/vault_state.dart';
 import 'package:path/path.dart' as p;
 
+import '../support/pump_until.dart';
 import '../vault/fakes.dart';
 
 void main() {
@@ -59,10 +60,12 @@ void main() {
       );
       await tester.tap(find.text('Restore'));
       await tester.pump();
-      // restoreVault() performs real (non-fake-clock) async I/O; give it a
-      // real wall-clock turn to complete before pumping the settled frame.
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      await tester.pump();
+      // restoreVault() performs real (non-fake-clock) async I/O; wait for
+      // its completion signal (the onUnlocked callback firing) instead of a
+      // fixed wall-clock delay. There's no widget-level change to key off of
+      // here (RestoreScreen doesn't navigate away on success), so this polls
+      // the captured result rather than a Finder.
+      await pumpUntilCondition(tester, () => unlocked != null);
     });
 
     expect(unlocked, isNotNull);
@@ -140,8 +143,10 @@ void main() {
 
       await tester.tap(find.text("I don't have the phrase — start fresh"));
       await tester.pump();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      await tester.pump();
+      // startFresh() performs real (non-fake-clock) dart:io file deletion;
+      // wait for its completion signal (onStartFresh firing) instead of a
+      // fixed wall-clock delay. No widget-level change to key off of here.
+      await pumpUntilCondition(tester, () => startFreshCalled);
     });
 
     expect(dbFile.existsSync(), isFalse);
