@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,12 @@ import 'package:local_reviews/app_repositories.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
 import 'package:local_reviews/screens/films/films_screen.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
+import 'package:local_reviews/services/poster_storage_service.dart';
+
+PosterStorageService _testPosterStorageService() => PosterStorageService(
+      cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+    );
 
 void main() {
   testWidgets('shows an empty state with no films, then lists a seeded film',
@@ -18,13 +25,17 @@ void main() {
     await tester.pumpWidget(
       AppRepositories(
         database: database,
+        posterStorageService: _testPosterStorageService(),
         child: const MaterialApp(home: FilmsScreen()),
       ),
     );
     await tester.pumpAndSettle();
     expect(find.text('No films yet'), findsOneWidget);
 
-    await FilmRepository(database).createFilm(title: 'Whisper of the Heart', year: 1995);
+    await FilmRepository(
+      database,
+      posterStorageService: _testPosterStorageService(),
+    ).createFilm(title: 'Whisper of the Heart', year: 1995);
     await tester.pumpAndSettle();
 
     expect(find.text('Whisper of the Heart (1995)'), findsOneWidget);
@@ -39,6 +50,7 @@ void main() {
     await tester.pumpWidget(
       AppRepositories(
         database: database,
+        posterStorageService: _testPosterStorageService(),
         child: const MaterialApp(home: FilmsScreen()),
       ),
     );

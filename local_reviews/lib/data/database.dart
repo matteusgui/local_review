@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
+import 'package:drift/native.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
@@ -50,9 +53,34 @@ const seedGenreNames = [
   'Fantasy',
 ];
 
+Future<File> resolveDatabaseFile() async {
+  final dir = await getApplicationSupportDirectory();
+  return File(p.join(dir.path, 'local_reviews.sqlite'));
+}
+
+QueryExecutor openEncryptedExecutor({
+  required File file,
+  required Uint8List key,
+}) {
+  final keyHex = key.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return NativeDatabase.createInBackground(
+    file,
+    setup: (rawDb) {
+      rawDb.execute("PRAGMA key = \"x'$keyHex'\";");
+      if (rawDb.select('PRAGMA cipher;').isEmpty) {
+        throw StateError(
+          'SQLite3MultipleCiphers is not active — refusing to open the '
+          'database unencrypted. Check the sqlite3mc build hook in '
+          'pubspec.yaml.',
+        );
+      }
+    },
+  );
+}
+
 @DriftDatabase(tables: [Films, Genres, FilmGenres, Reviews])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
+  AppDatabase(super.executor);
 
   @override
   int get schemaVersion => 1;
@@ -72,13 +100,4 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
-
-  static QueryExecutor _openConnection() {
-    return driftDatabase(
-      name: 'local_reviews',
-      native: const DriftNativeOptions(
-        databaseDirectory: getApplicationSupportDirectory,
-      ),
-    );
-  }
 }

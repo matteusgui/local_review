@@ -1,7 +1,10 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
 import 'package:local_reviews/data/repositories/review_repository.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
+import 'package:local_reviews/services/poster_storage_service.dart';
 
 import 'database_test.dart' show openTestDatabase;
 
@@ -12,7 +15,12 @@ void main() {
 
   setUp(() {
     database = openTestDatabase();
-    filmRepository = FilmRepository(database);
+    filmRepository = FilmRepository(
+      database,
+      posterStorageService: PosterStorageService(
+        cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+      ),
+    );
     reviewRepository = ReviewRepository(database);
   });
   tearDown(() => database.close());

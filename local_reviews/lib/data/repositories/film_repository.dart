@@ -11,8 +11,8 @@ class FilmWithGenres {
 }
 
 class FilmRepository {
-  FilmRepository(this._db, {PosterStorageService? posterStorageService})
-    : _posterStorageService = posterStorageService ?? PosterStorageService();
+  FilmRepository(this._db, {required PosterStorageService posterStorageService})
+    : _posterStorageService = posterStorageService;
 
   final AppDatabase _db;
   final PosterStorageService _posterStorageService;

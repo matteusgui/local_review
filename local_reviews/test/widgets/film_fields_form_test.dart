@@ -1,8 +1,14 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_reviews/data/database.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
 import 'package:local_reviews/services/poster_storage_service.dart';
 import 'package:local_reviews/widgets/film_fields_form.dart';
+
+PosterStorageService _testPosterStorageService() => PosterStorageService(
+      cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+    );
 
 void main() {
   testWidgets('validateTitle rejects empty and accepts non-empty', (tester) async {
@@ -26,7 +32,7 @@ void main() {
         body: FilmFieldsForm(
           controller: controller,
           allGenres: const [],
-          posterStorageService: PosterStorageService(),
+          posterStorageService: _testPosterStorageService(),
         ),
       ),
     ));
@@ -44,7 +50,7 @@ void main() {
         body: FilmFieldsForm(
           controller: controller,
           allGenres: [Genre(id: 1, name: 'Horror')],
-          posterStorageService: PosterStorageService(),
+          posterStorageService: _testPosterStorageService(),
         ),
       ),
     ));

@@ -1,3 +1,4 @@
+import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,12 @@ import 'package:local_reviews/app_repositories.dart';
 import 'package:local_reviews/data/database.dart';
 import 'package:local_reviews/data/repositories/film_repository.dart';
 import 'package:local_reviews/screens/reviews/add_edit_review_screen.dart';
+import 'package:local_reviews/services/poster_cipher_service.dart';
+import 'package:local_reviews/services/poster_storage_service.dart';
+
+PosterStorageService _testPosterStorageService() => PosterStorageService(
+      cipherService: PosterCipherService(SecretKey(List.generate(32, (i) => i))),
+    );
 
 // The review form (film picker + inline new-film fields + rating + review
 // text + watch date) is taller than the default 800x600 test viewport, which
@@ -31,6 +38,7 @@ Future<AppDatabase> pumpScreen(WidgetTester tester) async {
   await tester.pumpWidget(
     AppRepositories(
       database: database,
+      posterStorageService: _testPosterStorageService(),
       child: const MaterialApp(home: AddEditReviewScreen()),
     ),
   );
@@ -105,11 +113,13 @@ void main() {
       addTearDown(database.close);
       final filmId = await FilmRepository(
         database,
+        posterStorageService: _testPosterStorageService(),
       ).createFilm(title: 'Nausicaä', year: 1984);
 
       await tester.pumpWidget(
         AppRepositories(
           database: database,
+          posterStorageService: _testPosterStorageService(),
           child: const MaterialApp(home: AddEditReviewScreen()),
         ),
       );
@@ -148,11 +158,15 @@ void main() {
         ),
       );
       addTearDown(database.close);
-      await FilmRepository(database).createFilm(title: 'Nausicaä', year: 1984);
+      await FilmRepository(
+        database,
+        posterStorageService: _testPosterStorageService(),
+      ).createFilm(title: 'Nausicaä', year: 1984);
 
       await tester.pumpWidget(
         AppRepositories(
           database: database,
+          posterStorageService: _testPosterStorageService(),
           child: const MaterialApp(home: AddEditReviewScreen()),
         ),
       );
